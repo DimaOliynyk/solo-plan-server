@@ -25,13 +25,17 @@ mongoose
 app.use(express.json());
 app.use(volleyball);
 app.use(helmet());
-app.use(cors({ origin: "*" }));
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({
+  origin: '*', // or 'https://your-frontend-domain.com'
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
+
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3001/api/auth/google/callback",
+    callbackURL: "https://solo-plan-server-9hl58r2nj-dmytros-projects-32c8df75.vercel.app/api/auth/google/callback",
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
