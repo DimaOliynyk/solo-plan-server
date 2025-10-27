@@ -12,7 +12,7 @@ const User = new Schema(
     password: {
       type: String,
       minlength: 6,
-      required: true,
+      required: false,
     },
     email: {
       type: String,
@@ -21,6 +21,11 @@ const User = new Schema(
       type: String,
       required: false,
       default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // allows multiple nulls
     },
     tasks: [{
       type: Schema.Types.ObjectId,

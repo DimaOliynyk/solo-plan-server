@@ -38,7 +38,7 @@ router.post(
         const { date } = req.body
         console.log(req.body)
         if(new Date(date).getDate() < new Date().getDate()){
-            return res.status(401).json({
+            return res.status(402).json({
                 message: "You can't add task to previous date!"
             })
         } else {
