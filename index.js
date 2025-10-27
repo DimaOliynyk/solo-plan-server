@@ -2,48 +2,58 @@ require("dotenv").config();
 const express = require("express");
 const volleyball = require("volleyball");
 const helmet = require("helmet");
-const cors = require("cors");
 const mongoose = require("mongoose");
 const passport = require("passport");
-const { Strategy, ExtractJwt } = require("passport-jwt");
+const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const serverless = require("serverless-http"); // 🔹 Wrap Express for Vercel
+const serverless = require("serverless-http");
 
 const { auth, tasks } = require("./routes/index");
 const { User } = require("./models");
 
 const app = express();
 
-// Connect to MongoDB
+// MongoDB connection
 mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("Database connected successfully"))
-  .catch((error) => console.log(error));
+  .connect(process.env.MONGODB_URI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+  })
+  .then(() => console.log("Database connected"))
+  .catch((err) => console.error("DB connection error:", err));
 
 // Middleware
 app.use(express.json());
 app.use(volleyball);
 app.use(helmet());
-// CORS configuration
-const corsOptions = {
-  origin: "*", // Replace with your frontend URL in production
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Pre-flight request handling\=
+// CORS handling for Vercel
+app.use((req, res, next) => {
+  const allowedOrigin = req.headers.origin || "*";
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", "true");
 
-// Passport JWT & Google OAuth
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // Handle preflight
+  }
+  next();
+});
+
+// Passport Google OAuth Strategy
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:
-        "https://solo-plan-server-9hl58r2nj-dmytros-projects-32c8df75.vercel.app/api/auth/google/callback",
+      callbackURL: `${process.env.VERCEL_URL || "http://localhost:3000"}/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -51,8 +61,7 @@ passport.use(
         if (!user) {
           user = await User.create({
             googleId: profile.id,
-            username:
-              profile.displayName || `user_${profile.id.substring(0, 5)}`,
+            username: profile.displayName || `user_${profile.id.substring(0, 5)}`,
             email: profile.emails?.[0]?.value,
             avatarUrl:
               profile.photos?.[0]?.value ||
@@ -63,14 +72,15 @@ passport.use(
         done(null, user);
       } catch (err) {
         console.error("GoogleStrategy error:", err);
-        return done(err, null);
+        done(err, null);
       }
     }
   )
 );
 
+// Passport JWT Strategy
 passport.use(
-  new Strategy(
+  new JwtStrategy(
     {
       secretOrKey: process.env.JWT_SECRET,
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -78,21 +88,21 @@ passport.use(
     async (payload, done) => {
       try {
         const user = await User.findById(payload._id);
-        if (!user) {
-          done(new Error("User not found"));
-          return;
-        }
+        if (!user) return done(new Error("User not found"));
         done(null, user);
-      } catch (error) {
-        done(error);
+      } catch (err) {
+        done(err);
       }
     }
   )
 );
 
+// Initialize Passport
+app.use(passport.initialize());
+
 // Routes
 app.use("/api/auth", auth);
 app.use("/api/tasks", tasks);
 
-// Export app wrapped in serverless-http for Vercel
+// Export as serverless function for Vercel
 module.exports = serverless(app);
