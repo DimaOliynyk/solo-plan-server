@@ -22,7 +22,7 @@ router.get(
   (req, res) => {
     try {
       const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-      res.redirect(`http://localhost:3000/home-redirect?token=${token}`);
+      res.redirect(`https://solo-plan-eight.vercel.app/home-redirect?token=${token}`);
     } catch (err) {
       console.error("Callback error:", err);
       res.status(500).send("Internal Server Error");
