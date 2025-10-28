@@ -30,6 +30,11 @@ const Task = new Schema(
       type: Number,
       required: true,
     },    
+    isCompleted: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
   },
   
   {

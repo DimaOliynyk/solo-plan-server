@@ -90,4 +90,29 @@ router.delete("/:id", auth, async (req, res, next) => {
   }
 });
 
+router.patch("/:id/complete", auth, async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if(task.isCompleted) task.isCompleted = false;
+    else if(!task.isCompleted) task.isCompleted = true
+
+    await task.save();
+
+    return res.json({
+      task: task,
+      message: "Task status is changed successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 module.exports = router;
