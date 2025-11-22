@@ -82,7 +82,7 @@ passport.use(
 app.use("/api/auth", auth);
 app.use("/api/tasks", tasks);
 
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT || 8080, () => {
     console.log("Server Listening on PORT:", process.env.PORT);
 });
 module.exports = app;

@@ -34,6 +34,10 @@ const Task = new Schema(
       type: Boolean,
       required: false,
       default: false
+    },
+    author: {
+      type: Schema.Types.ObjectId,
+      ref: 'user'
     }
   },
   
