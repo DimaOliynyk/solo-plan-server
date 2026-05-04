@@ -12,8 +12,8 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const app = express();
 
 
-const { auth } = require("./routes/ìndex")
-const { tasks } = require("./routes/ìndex")
+const { auth } = require("./routes")
+const { tasks } = require("./routes")
 
 const { User } = require("./models");
 mongoose
@@ -31,11 +31,11 @@ app.use(cors({ origin: "*" }));
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://solo-plan-server.onrender.com/api/auth/google/callback",
+    // Теперь это значение будет браться из Railway
+    callbackURL: process.env.GOOGLE_CALLBACK_URL, 
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Check if user exists in DB
       let user = await User.findOne({ googleId: profile.id });
       if (!user) {
         user = await User.create({
@@ -43,13 +43,13 @@ passport.use(new GoogleStrategy({
           username: profile.displayName || `user_${profile.id.substring(0,5)}`,
           email: profile.emails[0].value,
           avatarUrl: profile.photos[0].value,
-          password: undefined,
-      })}
-
+          // password: undefined — это правильно для Google юзеров
+        });
+      }
       done(null, user);
     } catch (err) {
-        console.error("GoogleStrategy error:", err);
-        return done(err, null);
+      console.error("GoogleStrategy error:", err);
+      return done(err, null);
     }
   }
 ));
@@ -82,7 +82,10 @@ passport.use(
 app.use("/api/auth", auth);
 app.use("/api/tasks", tasks);
 
-app.listen(process.env.PORT || 8080, () => {
-    console.log("Server Listening on PORT:", process.env.PORT);
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server Listening on PORT: ${PORT}`);
 });
+
 module.exports = app;
