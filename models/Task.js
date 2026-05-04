@@ -19,11 +19,11 @@ const Task = new Schema(
       minlength: 2,
     },
     date: {
-      type: Number,
+      type: String,
       required: true,
     },
     time: {
-      type: Number,
+      type: String,
       required: true,
     },
     duration: {
@@ -33,6 +33,11 @@ const Task = new Schema(
     isCompleted: {
       type: Boolean,
       required: false,
+      default: false
+    },
+    onRepeat: {
+      type: Boolean,
+      require: false, 
       default: false
     },
     author: {
